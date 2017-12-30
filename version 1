@@ -1,0 +1,193 @@
+ /**
+  *写一个日历程序
+  *预期功能:
+  *1：对应月历查询
+  *2：星期查询
+  *3：闰年查询
+  *4：俩天之间的天数查询
+  *5：节假日查询
+  *6：备忘录——文件操作
+  */
+/**
+ *第一期
+ *1：对应月历查询
+ *2：星期查询
+ *3：闰年查询
+ *3：俩天之间的天数查询
+ *4：由间隔天数查询对应日期
+ */
+ #include<stdio.h>
+ #include<stdlib.h>
+ #include<string.h>
+ int *get_date(char*,int*);//从文字中提取日期数字信息
+ int jug_leap(int);//判断闰年
+ int jug_date(int,int,int);//判断输入合法性
+ int pin[12]={31,28,31,30,31,30,31,31,30,31,30,31};
+ int run[12]={31,29,31,30,31,30,31,31,30,31,30,31};
+ char year_nature[2][50]={"平年","闰年"};
+ char weekday[7][50]={"日","一","二","三","四","五","六"};
+ char mmonth[12][50]={"一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"};
+ int week(int,int,int);//蔡勒公式
+ void month(int,int);//基于week函数的二维数组
+ void year(int);
+ void menu();
+ int main()
+ {	
+	system("clear");
+	char date[128];
+	int date_num[3]={0};
+	int jugde;
+	int wee;
+	int i=0;
+	int choice;
+ 	printf("-穿云箭日历查询系统(1900年以后)-\n");
+	printf("格式:\n1:xxxx/xx/xx\t2:xxxx年xx月xx日\t3:xxxx-xx-xx\n");
+	printf("请输入年月日:");
+	scanf("%s",date);
+	*date_num=*get_date(date,date_num);
+	while(jug_date(date_num[0],date_num[1],date_num[2])!=1){
+		rewind(stdin);
+		printf("请输入正确日期:");
+		scanf("%s",date);
+		*date_num=*get_date(date,date_num);
+	}
+	
+	system("clear");
+	printf("-穿云箭日历查询系统(1900年以后)-\n");
+	menu();
+	wee=week(date_num[0],date_num[1],date_num[2]);
+ 	printf("-%d年%d月%d日-星期%s-\n",date_num[0],date_num[1],date_num[2],weekday[wee]);
+	printf("您的选择是:");
+	while(!(scanf("%d",&choice))&&choice<1&&choice>2){
+		rewind(stdin);
+		printf("输入错误,请重新输入:");
+	}
+	switch(choice){
+		case 1:
+			month(date_num[0],date_num[1]);
+			break;
+		case 2:
+			year(date_num[0]);
+			break;
+	}
+ 	return 0;
+ }
+ void menu()
+ {
+ 	printf("-菜单-");
+	printf("1-月历查询\t2-年历查询\n");
+ }
+ int *get_date(char *s,int *date)
+ {
+	int i,j=0;
+	int length;
+	length=strlen(s);
+	int date_num[8]={0};
+	for(i=0;i<length;i++)
+		if(s[i]>='0'&&s[i]<='9')
+			date_num[j++]=(s[i]-'0');
+	date[0]=date_num[0]*1000+date_num[1]*100+date_num[2]*10+date_num[3];
+	date[1]=date_num[4]*10+date_num[5];
+	date[2]=date_num[6]*10+date_num[7];
+	return date;
+ }
+ int jug_leap(int year)
+ {
+	return (year%100==0)?((year%400==0)?1:0):((year%4==0)?1:0);
+ }
+ int jug_date(int year,int month,int date)
+ {
+	if(jug_leap(year)==0) 
+		return year>=1900?month>=1?month<=12?date>0?date<=pin[month-1]?1:0:0:0:0:0;	
+	else
+		return year>=1900?month>=1?month<=12?date>0?date<=run[month-1]?1:0:0:0:0:0;
+ }
+ int week(int year,int month,int date)
+ {
+	int y,c,m,w;
+	if(month==1||month==2){
+		month+=12;
+		year--;
+	}
+	y=year%100;
+	c=year/100;
+	m=month;
+ 	w=y+y/4+c/4-2*c+26*(m+1)/10+date-1;
+	if(w<0)
+        	return (w+(-w/7+1)*7)%7;
+	else
+	return w%7;
+ }
+ void month(int year,int month)
+ {
+	int week_day;
+	int i,j;
+ 	int day[6][7]={0};
+	int change;
+	int month_day;
+	int month_last;
+	month_day=(jug_leap(year)==1)?run[month-1]:pin[month-1];
+	week_day=week(year,month,1);
+	month_last=(jug_leap(year)==1)?((month==1)?run[11]:run[month-2]):((month==1)?pin[11]:pin[month-2]);
+	change=month_last-week_day+1;
+	printf("%s\n",mmonth[month-1]);
+	for(i=0;i<7;i++)
+		printf("%s\t",weekday[i]);
+	printf("\n");
+        for(i=0;i<6;i++){
+                for(j=0;j<7;j++){
+			if((i==0 && j==week_day)||(change==month_day+1 && i!=0))
+				change=1;
+                        day[i][j]=change++;
+                }
+        }
+	for(i=0;i<6;i++){
+		for(j=0;j<7;j++)
+			printf("%d\t",day[i][j]);
+		printf("\n");
+	}
+	
+ }
+ void year(int year)
+ {
+	int i,j,k,l;
+ 	int m[12];
+	int day[12][6][7];
+	int change;
+	int week_day;
+	if(jug_leap(year)==1)
+		memcpy(m,run,sizeof(run));
+	else
+		memcpy(m,pin,sizeof(pin));
+	for(k=0;k<12;k++){
+		week_day=week(year,k+1,1);
+		change=((k==0)?m[11]:m[k-1])-week_day+1;
+		for(i=0;i<6;i++){
+			for(j=0;j<7;j++){
+				if((i==0 && j==week_day)||(change==m[k]+1 && i!=0))
+					change=1;	
+				day[k][i][j]=change++;
+			}
+		}
+	}
+	printf("-%d年-%s-\n",year,year_nature[jug_leap(year)]);
+	for(l=0;l<3;l++){
+		for(k=0;k<4;k++)
+			printf("%s\t\t\t\t",mmonth[l*4+k]);
+		printf("\n");
+		for(k=0;k<4;k++){
+			for(i=0;i<7;i++)
+                		printf("%s  ",weekday[i]);
+			printf("\t");
+		}
+		printf("\n");
+		for(i=0;i<6;i++){
+			for(k=0;k<4;k++){
+                		for(j=0;j<7;j++)
+                        		printf("%2d  ",day[k+l*4][i][j]);
+				printf("\t");
+			}
+			printf("\n");
+		}
+	}
+ }
